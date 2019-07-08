@@ -1,0 +1,65 @@
+\subsection{画像からの縫製位置検出方法}
+学習の対象となる画像例を図３に示す。この画像は、製造工程における縫製布の表面を拡大したものであり、点群のようなものは、布地表面の模様である。ここで、縫製位置は点群の中点を結んだ図４であり、このXを描くラインを自動で検出することが目的となる。例示した画像は比較的見やすいが、実際には後述するように、縫い跡や凹凸による影の発生などにより、様々な画像パタンが存在する。これらの異なるパタン全てに対応するためには、Deep Learningを使った位置検出を検討する意義が高いと言える。尚、実際にはX以外の形状・曲面を描くパタンもあるが、今回は学習の対象外とする。
+
+\begin{figure}[htbp]
+ \begin{minipage}{0.5\hsize}
+  \begin{center}
+   \includegraphics[width=60mm]{images/segmentation/sample01.png}
+  \end{center}
+  \caption{学習画像}
+  \label{fig:one}
+ \end{minipage}
+ \begin{minipage}{0.5\hsize}
+  \begin{center}
+   \includegraphics[width=60mm]{images/segmentation/sample01-2.png}
+  \end{center}
+  \caption{縫製位置}
+  \label{fig:two}
+ \end{minipage}
+\end{figure}
+
+
+Deep Learningによる位置検出方法について検討を行う。縫製位置は、点群のエッジ部分からの中点に位置する。このため、例えば図５のように、点群の領域や、点群のエッジ部分をDeep Learningにより自動で検出することができれば、図６のように、その中間を画像処理により抽出することは容易に実現しうるものである。この点群領域を検出するため、今回はDeep Learningを用いたSemantic Segmentation手法を用いて検討する。
+
+\begin{figure}[htbp]
+ \begin{minipage}{0.5\hsize}
+  \begin{center}
+   \includegraphics[width=60mm]{images/segmentation/sample02.png}
+  \end{center}
+  \caption{点群領域の推定}
+  \label{fig:three}
+ \end{minipage}
+ \begin{minipage}{0.5\hsize}
+  \begin{center}
+   \includegraphics[width=60mm]{images/segmentation/sample02-1.png}
+  \end{center}
+  \caption{縫製位置の検出}
+  \label{fig:four}
+ \end{minipage}
+\end{figure}
+
+
+\subsection{Segmentation手法}
+Semantic Segmentationとは、画像の特徴を画素レベルで把握する手法のことである。その実現方法は多数あるが、Deep Learningを使った手法としてSegNet\footnote{http:\slash\slash mi.eng.cam.ac.uk\slash projects\slash segnet}について検討を行う。
+
+SegNetとは、ケンブリッジ大学の研究グループにて提案された、画像をある画素単位で分割し、その特徴量を算出することで物体の種類に応じた領域の検出が可能となるオープンソースのDeep Learningアーキテクチャである。その構造を図７に示す\footnote{Vijay Badrinarayanan, Alex Kendall and Roberto Cipolla, "SegNet: A Deep Convolutional Encoder-Decorder Architecture for Image Segmentation," https:\slash\slash arxiv.org\slash pdf\slash 1511.00561.pdf}。SegNetは、EncoderとDecoderの処理ネットワークに分割できる。Encoderは、VGG16モデルをベースとした画像の局所特徴を抽出するための畳み込み層\footnote{Karen Simonyan and Andrew Zisserman, "Very Deep Convolutional Networks for Large-Scale Image Recognition," https:\slash\slash arxiv.org\slash pdf\slash 1409.1556.pdf}、ダウンサンプリングを行い画素単位を細かくしていくプーリング層、計算途上で勾配消失を防ぐBatch Normalization層などから構成されており、細分化した画素値から物体の持つ特徴量を学習していく。Decoderでは、Encoderによって得られた物体の種類と大まかな位置情報を持つ特徴量マップに対し、アップサンプリングと畳み込み処理を行うことで元の解像度へ対応づけを行っていく。ここで、図８に示すように、アップサンプリングではEncoderネットワークにおいて予め記憶したプーリング層の画素関係・Pooling Indicesを使い、より適した位置に特徴量を割り当てる。例えば、cを割り当てる際にプーリング層では図のような特徴量を持っていたとすると、割り当てられるべきは左下の領域となる。割り当てた特徴量は畳み込み演算により滑らかになり、最終段において特徴量を際立たせるSoftmax処理を行うことで、入力画像の特徴を画素単位で表示することができる。図中の例においては、道路の風景写真に対して、道路・路側帯・車といった物体の特徴をマップ化することで異なる色で塗り分けている。
+\\
+\begin{figure}[htbp]
+  \begin{center}
+    \includegraphics[width=140mm]{images/segmentation/segnet.png}
+    \caption{SegNetアーキテクチャ}
+    \label{fig:segnet}
+  \end{center}
+\end{figure}
+\begin{figure}[htbp]
+  \begin{center}
+    \includegraphics[width=90mm]{images/segmentation/upsample.png}
+    \caption{Upsample処理}
+    \label{fig:upsample}
+  \end{center}
+\end{figure}
+
+\newpage
+
+\subsection{量子化ネットワーク}
+LeapMindでは、Deep Learningモデルを軽量なエッジデバイスで動作させるため、モデルの量子化を行なっている。量子化とは、通常32bitや16bitの浮動小数点で表現されている重みや特徴量データを、より少ないbit数の固定小数や整数などで表現するものである。畳み込みを行うDeep Learningモデルでは、演算量の大部分を畳み込み処理、即ち乗算と加算が占めている。この演算過程において、処理すべき単位が高次の浮動小数点であった場合、必要な回路規模は固定小数点や整数と比べると格段に大きくなるため、消費電力やメモリ領域の増加、処理速度の低下といった問題を引き起こす。特に演算回路規模の少ないエッジデバイスにおいては、性能劣化だけでなく、そもそもハードウェアへの実装ができないケースも発生しうる。このため、精度劣化がさほど発生しない範囲内において、重みや特徴量データをより少ないbitで表現する量子化が有効な解決策となる。LeapMindでは、特にこの量子化に対して技術的な優位性があり、精度劣化を抑えつつ内部での処理を最小1bitで実施することができる。今回は、SegNetをベースとし量子化技術を加えたモデルを用いて学習・検証を実施する。

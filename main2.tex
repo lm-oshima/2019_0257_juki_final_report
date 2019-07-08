@@ -1,0 +1,89 @@
+%#!ptex2pdf -l
+%#BIBTEX bibtex main
+\documentclass[dvipdfmx,autodetect-engine,10pt,a4paper]{jsarticle}
+\usepackage[deluxe]{otf}
+\renewcommand{\headfont}{\gtfamily\sffamily\bfseries}
+\usepackage[defaultsans]{droidsans}
+\renewcommand*\familydefault{\sfdefault}
+\usepackage[T1]{fontenc}
+\renewcommand{\kanjifamilydefault}{\gtdefault}
+\usepackage[dvipdfmx]{graphicx}
+\usepackage{fancyhdr}
+\usepackage{colortbl}
+\usepackage{wallpaper}
+\usepackage{bm}
+\usepackage{amsmath}
+\usepackage{url}
+\usepackage{longtable}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+
+\pagestyle{fancy}
+\lhead{}
+\chead{}
+\rhead{}
+\lfoot{LeapMind Inc. \copyright \, 2019.}
+\cfoot{}
+\rfoot{\thepage}
+\renewcommand{\headrulewidth}{0.0pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+
+\begin{document}
+\ThisLRCornerWallPaper{1.0}{images/footer.pdf}
+
+\begin{center}
+  \vspace*{20mm}
+  \Huge 縫製位置検出のための\\
+ \Huge ディープラーニングモデル検討 \par
+  \vspace{10mm}
+  \huge 2019年6月28日（金） \par
+  \vspace{90mm}
+  \includegraphics[width=8cm]{images/LM_Logo.pdf}
+  \thispagestyle{empty}
+  \clearpage
+  \addtocounter{page}{-1}
+  \end{center}
+\newpage
+
+\tableofcontents
+\thispagestyle{empty}
+\clearpage
+\addtocounter{page}{-1}
+\clearpage
+
+\section{本プロジェクトの目的}
+\input{abstract}
+
+\clearpage
+\section{Deep Learningによる縫製位置検出方法}
+\input{segmentation}
+
+\clearpage
+\section{データセット・学習手順}
+\input{dataset}
+
+\clearpage
+\section{モデル作成と評価指標}
+\input{model_cst}
+
+\clearpage
+\section{評価結果}
+\input{eval}
+
+
+\clearpage
+\section{全体を通してのまとめ}
+
+縫製の自動化へ向けて、縫製時の写真を学習データに用いたDeep Learningモデルを作り評価を行った。その結果、高いIoUと実データでの推論評価より、Deep Learningにより縫製位置を検出することができる可能性が高いという結論に至った。本モデルを搭載した自動縫製装置の実用化には、モデルの精度や処理速度向上のためのデータセット収集・チューニングに加え、CPU・軽量GPUといった実装するハードウェアの検討、製品・サービスの仕様検討、システム・運用設計といった部分が必要となる。本結果はその第一歩を踏み出すに十分な結果を得たと言える。
+
+\clearpage
+\section *{付録：推論結果一覧}
+\input{compare_all_results}
+
+
+\bibliography{citation}
+\bibliographystyle{unsrt}
+
+\end{document}
